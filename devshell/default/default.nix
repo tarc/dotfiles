@@ -2,32 +2,15 @@
 
 {
   packages = with pkgs; [
-    sops
-    npins
-    nixfmt-rfc-style
-    stylua
-    statix
     deadnix
+    nixfmt-rfc-style
   ];
   pre-commit = {
     hooks = {
       nixfmt-rfc-style = {
         enable = true;
-        excludes = [
-          "^planet/pkgs/npins/"
-          "^planet/pkgs/vim-plugins/npins/"
-        ];
+        excludes = [ ];
       };
-      statix = {
-        enable = true;
-        settings = {
-          ignore = [
-            "planet/pkgs/npins/"
-            "planet/pkgs/vim-plugins/npins/"
-          ];
-        };
-      };
-      stylua.enable = true;
       deadnix.enable = true;
     };
   };

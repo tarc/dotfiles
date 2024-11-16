@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   check-flake:
-    runs-on: ubuntu-22.04
+    runs-on: macos-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
       - name: Check flake
         run: nix flake check --keep-going --impure # devenv requires impure
   determine-hosts:
-    runs-on: ubuntu-22.04
+    runs-on: macos-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     needs: [check-flake]
     outputs:
@@ -38,10 +38,10 @@ jobs:
       - id: generate
         name: Generate hosts list
         run: |
-          hosts=$(nix flake show --impure --json . | jq -c '.nixosConfigurations | keys')
+          hosts=$(nix flake show --impure --json . | jq -c '.packages | keys')
           printf '%s' "hosts=$hosts" >> "$GITHUB_OUTPUT"
   build-hosts:
-    runs-on: ubuntu-22.04
+    runs-on: macos-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     needs: [determine-hosts]
     strategy:
@@ -49,20 +49,16 @@ jobs:
       matrix:
         host: ${{ fromJson(needs.determine-hosts.outputs.hosts) }}
     steps:
-      - uses: jlumbroso/free-disk-space@v1.3.1
-        with:
-          tool-cache: true
-          swap-storage: false
       - uses: actions/checkout@v4
       - name: Build ${{ matrix.host }}
         uses: ./.github/actions/build
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          derivation: ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel"
-          cachix-extra-pull-names: "nix-gaming, hyprland, nix-community"
+          derivation: ".#packages.${{ matrix.host }}.nixpkgs-review"
+          cachix-extra-pull-names: "nix-community tarc"
   build-result: # https://github.com/orgs/community/discussions/26822#discussioncomment-5122101
-    runs-on: ubuntu-22.04
+    runs-on: macos-latest
     needs: [build-hosts]
     if: ${{ (failure() || success()) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name) }}
     steps:

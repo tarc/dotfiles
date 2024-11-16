@@ -1,71 +1,57 @@
 {
   description = "My NixOS configuration";
 
+  nixConfig = {
+    substituters = [
+      "https://cache.nixos.org/"
+      "https://nix-community.cachix.org"
+      "https://tarc.cachix.org"
+    ];
+
+    trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "tarc.cachix.org-1:wIYVNrWvfOFESyas4plhMmGv91TjiTBVWB0oqf1fHcE="
+    ];
+  };
+
   inputs = {
     flake-parts = {
-      url = "github:hercules-ci/flake-parts";
+      url = "https://flakehub.com/f/hercules-ci/flake-parts/*.tar.gz";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
-    flake-utils.url = "github:numtide/flake-utils";
+    flake-utils.url = "https://flakehub.com/f/numtide/flake-utils/*.tar.gz";
     devenv.url = "github:cachix/devenv";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/*";
+    darwin = {
+      url = "github:LnL7/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "https://flakehub.com/f/nix-community/home-manager/*";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    impermanence.url = "github:nix-community/impermanence";
     sops-nix = {
-      url = "github:Mic92/sops-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nil = {
-      url = "github:oxalica/nil";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nix-gaming = {
-      url = "github:fufexan/nix-gaming";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    hyprland = {
-      url = "github:hyprwm/Hyprland";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    catppuccin-grub = {
-      url = "github:catppuccin/grub";
-      flake = false;
-    };
-    fenix = {
-      url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    wired = {
-      url = "github:Toqozz/wired-notify";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    kmonad = {
-      url = "github:kmonad/kmonad?dir=nix";
+      url = "https://flakehub.com/f/Mic92/sops-nix/*.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
   outputs =
-    inputs@{
-      flake-parts,
-      ...
-    }:
+    inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [
-        ./lib/flake-module.nix
-        ./devshell/flake-module.nix
-        ./planet/flake-module.nix
-        ./nixos/flake-module.nix
-        ./home-manager/flake-module.nix
-        ./templates/flake-module.nix
-      ];
+      imports = [ ./devshell/flake-module.nix ];
 
       systems = [
-        "x86_64-linux"
-        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
       ];
+
+      perSystem =
+        { inputs', ... }:
+        {
+          packages.nixpkgs-review = inputs'.nixpkgs.legacyPackages.nixpkgs-review;
+          packages.ghostscript = inputs'.nixpkgs.legacyPackages.ghostscript;
+        };
     };
 }
